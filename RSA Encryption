@@ -1,0 +1,119 @@
+#include "rsa.h"
+#include <utility>
+#include <cassert>
+#include <cstdlib>
+#include <iostream>
+#include <tuple>
+using namespace std;
+
+//calculate RSA's N value from p and q
+int computeN(int p, int q){ 
+  int N = p * q; 
+  return N;
+}
+
+//calculate RSA's ϕ value from p and q
+int computePhi(int p, int q){ 
+  int Phi = (p-1) * (q - 1);
+  return Phi;
+}
+
+// computes xʸ mod m
+int powmod(int x, int y, int m) {
+  int result = 1;
+  while (y--) {
+    result *= x;
+    result %= m;
+  }
+
+  return result;
+}
+
+// computes the greatest common divisor of x and y
+int gcd(int x, int y) {
+  //implement Euclid's algorithm
+  if (y == 0)
+    return x;
+  return gcd(y, x % y);
+}
+
+// find an integer e such that gcd(e, ϕ) = 1
+// use rand() to find a number (in the correct range!) that works
+int computeE(int phi) {
+  int e = rand() % phi; 
+  
+  while (e < phi) {
+   int track = gcd(e, phi);
+    if(track == 1)
+      break;
+    else
+      e = rand() % phi;
+  }
+  return e;
+}
+
+// returns a pair (a, b) such that ax + by = gcd(x, y)
+std::pair<int, int>  extended_gcd(int x, int y) {
+  // See https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Pseudocode
+  //  pair<int, int> s = make_pair(x,y); 
+  //  pair<int, int> r = make_pair(x,y);  
+  int s = 0;
+  int old_s = 1;
+  int r = y; 
+  int old_r = x; 
+  int t = 1;
+  int old_t = 0;
+  int prov;
+  
+  while (r != 0) {
+    int  quotient = old_r / r;
+    prov = r;
+    r = (old_r - quotient * prov);
+    old_r = prov;
+    
+    prov = s;
+    s = (old_s - quotient * prov);
+    old_s = prov;
+
+    prov = t;
+    t = (old_t - quotient * prov);
+    old_t = prov;
+  }
+     
+
+return make_pair(old_s, old_t);
+}
+
+// computes the multiplicative inverse of e mod ϕ
+// That is: find inv such that (e * inv) % ϕ = 1
+int multiplicativeInverse(int e, int phi) {
+  // Use extended_gcd to do most of the work.
+  // The multiplicative inverse you get from extended_gcd might be negative--
+  // make sure to return a number between 0 and ϕ-1. (Hint: remember that 
+  // adding multiples of ϕ do not change the result mod ϕ.)
+  // if (0 < d <= (phi - 1))
+  
+  pair<int, int> d = extended_gcd(e, phi); 
+  
+  while (d.first < 0){
+    d.first = d.first + phi;
+    
+    if (d.first >= 0)
+      break;
+  }
+  return d.first;  
+}
+
+// RSA encryption--given a message, return the ciphertext
+// (messages are ints in this implementation)
+int encrypt(int message, int e, int N) { 
+   int crypt  = powmod(message, e, N);
+   return crypt;
+}
+
+// RSA decryption--given a ciphertext, return the decrypted message
+// (messages are ints in this implementation)
+int decrypt(int ciphertext, int d, int N) { 
+  int dcrypt = powmod(ciphertext, d, N);
+  return dcrypt;
+}
